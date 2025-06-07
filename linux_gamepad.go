@@ -11,6 +11,7 @@ import (
 )
 
 const (
+	// ioctl commands
 	gpName       = 0x80006a13 + (128 << 16)
 	gpAxes       = 0x80016a11 /* get number of axes */
 	gpButtons    = 0x80016a12
@@ -42,6 +43,7 @@ type eventLinux struct {
 	Index     uint8
 }
 
+// newLinuxGamepad creates a new gamepadLinux instance for a specific joystick device and returns it along with any errors that may have occurred during the initialization process.
 func newLinuxGamepad(name, path string) (*gamepadLinux, error) {
 
 	f, err := openFilePersistent(path)

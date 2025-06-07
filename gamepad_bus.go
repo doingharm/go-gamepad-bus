@@ -7,34 +7,40 @@ import (
 	"sync"
 )
 
+// bus is the internal implementation of the Bus interface.
 type bus struct {
 	sync.RWMutex
-	verbose      bool
 	eventChannel chan *Event
 	errChannel   chan error
 	notifier     notify
 	channels     []*EventChannel
 }
 
+// Bus is the main interface for interacting with the joystick events.
 type Bus interface {
+	// NewEventChannel creates a new event channel that filters the events based on the provided filter functions.
 	NewEventChannel(filters ...FilterFunc) (dest *EventChannel)
+	// Gamepads returns a list of all the available gamepads connected to the system.
 	Gamepads() (gamepads []Gamepad)
+	// Subscribe subscribes to the joystick events for a specific gamepad ID.
 	Subscribe(id string) (err error)
+	// Unsubscribe unsubscribes from the joystick events for a specific gamepad ID.
 	Unsubscribe(id string) (err error)
+	// Close stops the bus and closes all the event channels.
 	Close()
 }
 
-func New(verbose bool) (b Bus, errCh <-chan error, err error) {
+// This function creates a new gamepad bus instance and returns it, along with an error channel for any errors that may occur during the initialization process.
+func New() (b Bus, errCh <-chan error, err error) {
 
 	dest := &bus{
-		verbose:      verbose,
 		eventChannel: make(chan *Event),
 		errChannel:   make(chan error),
 	}
 
 	switch runtime.GOOS {
 	case "linux":
-		if dest.notifier, err = linuxNotifier(dest.eventChannel, dest.errChannel, false); err != nil {
+		if dest.notifier, err = linuxNotifier(dest.eventChannel, dest.errChannel); err != nil {
 			return
 		}
 		return dest, dest.errChannel, nil

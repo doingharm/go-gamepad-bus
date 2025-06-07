@@ -10,11 +10,12 @@ import (
 	"unsafe"
 )
 
-type LinuxEventType uint8
+// linuxEventType is an enumeration of possible event types on a Linux system.
+type linuxEventType uint8
 
 const (
-	IrrelevantEventType LinuxEventType = iota
-	GamepadEventType
+	irrelevantEventType linuxEventType = iota
+	gamepadEventType
 )
 
 const (
@@ -23,7 +24,6 @@ const (
 
 type notifyLinux struct {
 	sync.RWMutex
-	verbose      bool
 	ctx          context.Context
 	cancelFunc   context.CancelFunc
 	waitNotify   sync.WaitGroup
@@ -32,15 +32,16 @@ type notifyLinux struct {
 	errChannel   chan error
 }
 
-func linuxNotifier(eventChannel chan *Event, errChannel chan error, verbose bool) (nn notify, err error) {
+// linuxNotifier creates a Linux-specific gamepad notification system.
+func linuxNotifier(eventChannel chan *Event, errChannel chan error) (nn notify, err error) {
 
 	nl := &notifyLinux{
 		eventChannel: eventChannel,
 		ctx:          context.Background(),
-		verbose:      verbose,
 		errChannel:   errChannel,
 	}
 
+	// Create a new context with a cancel function for stopping the notification system.
 	nl.ctx, nl.cancelFunc = context.WithCancel(nl.ctx)
 
 	var current []os.DirEntry
@@ -49,6 +50,7 @@ func linuxNotifier(eventChannel chan *Event, errChannel chan error, verbose bool
 		return
 	}
 
+	// Create a new goroutine for each device to watch for create events (i.e., when the gamepad is connected).
 	for _, entry := range current {
 		nl.waitNotify.Add(1)
 		go nl.handleEvent(unix.IN_CREATE, []byte(entry.Name()))
@@ -69,7 +71,6 @@ func linuxNotifier(eventChannel chan *Event, errChannel chan error, verbose bool
 			return
 		}()
 
-		// Watch /dev for all events
 		var wd int
 		wd, err = unix.InotifyAddWatch(fd, inputPath, unix.IN_CREATE|unix.IN_DELETE|unix.IN_MODIFY)
 		if err != nil {
@@ -114,6 +115,7 @@ func linuxNotifier(eventChannel chan *Event, errChannel chan error, verbose bool
 	return nl, nil
 }
 
+// gamepads returns a list of connected gamepads.
 func (nl *notifyLinux) gamepads() (devices []Gamepad) {
 	nl.RLock()
 	defer nl.RUnlock()
@@ -130,6 +132,7 @@ func (nl *notifyLinux) gamepads() (devices []Gamepad) {
 	return
 }
 
+// stop stops the notification system.
 func (nl *notifyLinux) stop() (err error) {
 
 	nl.RLock()
@@ -145,6 +148,7 @@ func (nl *notifyLinux) stop() (err error) {
 	return
 }
 
+// subscribe subscribes to the gamepad with the given ID.
 func (nl *notifyLinux) subscribe(id string) (err error) {
 	nl.RLock()
 	defer nl.RUnlock()
@@ -161,6 +165,7 @@ func (nl *notifyLinux) subscribe(id string) (err error) {
 	return fmt.Errorf(ErrJoystickNotFound, id)
 }
 
+// unsubscribe unsubscribes from the gamepad with the given ID.
 func (nl *notifyLinux) unsubscribe(id string) (err error) {
 	nl.RLock()
 	defer nl.RUnlock()
@@ -177,6 +182,7 @@ func (nl *notifyLinux) unsubscribe(id string) (err error) {
 	return fmt.Errorf(ErrJoystickNotFound, id)
 }
 
+// handleEvent is called when a new event is received from the inotify system.
 func (nl *notifyLinux) handleEvent(mask int, bt []byte) {
 
 	defer nl.waitNotify.Done()
@@ -192,14 +198,14 @@ func (nl *notifyLinux) handleEvent(mask int, bt []byte) {
 	case mask == unix.IN_CREATE:
 
 		switch t {
-		case GamepadEventType:
+		case gamepadEventType:
 			nl.connectGamepad(name)
 		default:
 			return
 		}
 	case mask == unix.IN_DELETE:
 		switch t {
-		case GamepadEventType:
+		case gamepadEventType:
 			nl.eventChannel <- &Event{
 				Type: DisconnectEventType,
 				ID:   name,
@@ -212,6 +218,7 @@ func (nl *notifyLinux) handleEvent(mask int, bt []byte) {
 	}
 }
 
+// connectGamepad is called when a new gamepad device is connected.
 func (nl *notifyLinux) connectGamepad(name string) {
 
 	path := fmt.Sprintf("%s/%s", inputPath, name)

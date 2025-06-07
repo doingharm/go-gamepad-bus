@@ -2,12 +2,12 @@ package gamepads
 
 import "bytes"
 
-func extractFromBytes(src []byte) (t LinuxEventType, name string, ok bool) {
+func extractFromBytes(src []byte) (t linuxEventType, name string, ok bool) {
 	switch {
 	case bytes.Compare(src[:2], []byte{106, 115}) == 0:
-		return GamepadEventType, escapeString(src), true
+		return gamepadEventType, escapeString(src), true
 	default:
-		return IrrelevantEventType, "", false
+		return irrelevantEventType, "", false
 	}
 }
 
