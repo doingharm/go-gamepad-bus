@@ -1,4 +1,8 @@
 # 🎮 go-gamepad-bus
+[![Go Reference](https://pkg.go.dev/badge/github.com/doingharm/go-gamepad-bus.svg)](https://pkg.go.dev/github.com/doingharm/go-gamepad-bus)
+[![Go Report Card](https://goreportcard.com/badge/github.com/doingharm/go-gamepad-bus)](https://goreportcard.com/report/github.com/doingharm/go-gamepad-bus)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
+[![Go Version](https://img.shields.io/badge/go-%3E=1.23-blue)](https://golang.org/doc/go1.23)
 
 A high-performance, event-driven **gamepad/joystick bus** written in pure Go.
 
